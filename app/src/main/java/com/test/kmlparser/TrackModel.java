@@ -5,7 +5,6 @@ import java.util.List;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.graphics.Point;
 import android.util.Log;
 
 import com.google.android.gms.maps.GoogleMap;
@@ -17,6 +16,7 @@ import com.google.android.gms.maps.model.LatLng;
 
 import com.google.android.gms.maps.model.Polyline;
 import com.google.android.gms.maps.model.PolylineOptions;
+import com.google.maps.android.SphericalUtil;
 
 public class TrackModel {
 
@@ -27,19 +27,6 @@ public class TrackModel {
     private Polyline m_polyline = null;
     private GroundOverlay tractor = null;
     private int iconId;
-
-    //What's wrong. Why does Android have not Point2D impl ????
-    private class Point2d {
-        private double x;
-        private double y;
-        public Point2d(double x, double y)
-        {
-            this.x = x;
-            this.y = y;
-        }
-        double getX() { return x;}
-        double getY() { return y;}
-    }
 
     public TrackModel(GoogleMap m, Context ctx, int iconId)
     {
@@ -54,7 +41,10 @@ public class TrackModel {
         if(tractor == null && m_polylineOptions.getPoints().isEmpty()) {
             tractor = m_map.addGroundOverlay(new GroundOverlayOptions()
                     .image(getIconFromFile())
-                    .position(start_p, 10));
+                    .position(start_p, 10)
+                    .anchor(0.5f, 0.5f)
+            );
+            tractor.setBearing(0);
             m_polylineOptions.add(start_p);
             m_polyline = m_map.addPolyline(m_polylineOptions);
         }
@@ -62,24 +52,8 @@ public class TrackModel {
 
     private BitmapDescriptor getIconFromFile() {
         Bitmap bitmap= BitmapFactory.decodeResource(m_owner.getResources(), iconId);
-        //R.drawable.track_final_2);
         BitmapDescriptor icon = BitmapDescriptorFactory.fromBitmap(bitmap);
         return icon;
-    }
-
-    private float calcAngle(Point2d p1 , Point2d p2 ) {
-        double ret = Math.acos(
-                (p1.getX()*p2.getX() + p1.getY()*p2.getY()) /
-                        ( Math.sqrt(Math.pow(p1.getX(), 2.0) + Math.pow(p1.getY(), 2.0))
-                                * Math.sqrt(Math.pow(p2.getX(),2.0) + Math.pow(p2.getY(), 2.0))
-                        )
-        );
-        return (float)ret;
-    }
-
-    private LatLng entityNorthVector(final LatLng p) {
-        LatLng res = new LatLng(p.latitude + 0.0001, p.longitude);
-        return res;
     }
 
     public void moveTo(LatLng p) {
@@ -93,27 +67,13 @@ public class TrackModel {
     private void rotateIcon() {
         List<LatLng> points = m_polyline.getPoints();
         int list_size = points.size();
-        if( list_size == 2) {
-            LatLng first = points.get(0);
-            LatLng second = points.get(1);
-            Point2d vec1 = new Point2d(0.001, 0.0);
-            Point2d vec2 = new Point2d( second.latitude - first.latitude,
-                                        second.longitude - second.longitude);
-            float angle = calcAngle(vec1, vec2);
-            Log.d("TrackModel", "rotateIcon, angle :" + Float.toString(angle));
-            tractor.setBearing(angle);
-
-        } else if(list_size > 2) {
-            LatLng p1 = points.get(list_size -3);
-            LatLng p2 = points.get(list_size - 2);
-            LatLng p3 = points.get(list_size - 1);
-
-            Point2d v1 = new Point2d(p2.latitude - p1.latitude, p2.longitude - p1.longitude);
-            Point2d v2 = new Point2d( p3.latitude - p2.latitude, p3.longitude - p2.longitude);
-            float angle = calcAngle(v1, v2);
-            //lastAngleRotation
-            Log.d("TrackModel", "rotateIcon, angle :" + Float.toString(angle));
-            tractor.setBearing(angle); //does it apply new value depends on north or current angle
+        Log.d("TrackModel", "Points size :" + Integer.toString(list_size));
+        if(list_size > 1) {
+            LatLng p1 = points.get(list_size - 2);
+            LatLng p2 = points.get(list_size - 1);
+            float bearing = (float)SphericalUtil.computeHeading(p1, p2);
+            Log.d("TrackModel", "angle rotation : " + Float.toString(bearing));
+            tractor.setBearing(bearing);
         }
     }
 }
