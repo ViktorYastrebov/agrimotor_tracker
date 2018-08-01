@@ -38,32 +38,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
     private GoogleMap mMap;
     private KMLParser parser;
-
-    private GroundOverlay tractor;
-    private PolylineOptions polylineOptions;
-    private Polyline polyline;
-
-   private final String testsCoords[] = {
-            "coord_test1.txt",
-            "coord_test2.txt"
-    };
-    private List<Pair<Double, Integer>> testScales;
-    private List<Tracker> trackers;
-
-
-    /*
-    class MyView extends View {
-        public MyView(Context ctx)
-        {
-            super(ctx);
-        }
-        protected void onDraw(Canvas canvas) {
-            super.onDraw(canvas);
-            Paint paint = new Paint();
-            paint.setColor(Color.BLACK);
-            canvas.drawLine(0.0f,0.0f, 500.0f, 500.0f, paint);
-        }
-    } */
+    private TrackModel trackModel;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -74,68 +49,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 .findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
         parser = new KMLParser("Doslidnicke.kml", this);
-
-        polylineOptions = new PolylineOptions();
-        polylineOptions.width(4.0f);
-
-/*
-        trackers = new ArrayList<Tracker>();
-        for(int i =0; i < testsCoords.length; ++i) {
-            TestCoordsParser data  = new TestCoordsParser(testsCoords[i], this);
-            Tracker tracker = new Tracker();
-            tracker.addPoints(data.getCoords());
-            trackers.add(tracker);
-        }
-        testScales = new ArrayList<Pair<Double, Integer>>();
-        testScales.add(new Pair<Double, Integer>(
-                //orange
-                new Double(0.001), new Integer(Color.rgb(220,20,60))
-        ));
-        testScales.add(new Pair<Double, Integer>(
-                //lime
-                new Double(0.0001), new Integer(Color.rgb(127,255,0))
-        ));
-        testScales.add(new Pair<Double, Integer>(
-                //
-                new Double(0.00007), new Integer(Color.rgb(255,215,0))
-        ));
-        testScales.add( new Pair<Double, Integer>(
-                //lightseagreen
-                new Double(0.00001), new Integer(Color.rgb(2,178,170))
-        ));
-        */
-
-        //setContentView(new MyView(this));
-    }
-
-    /*private void TestScales() {
-        for(Tracker trackerIt : trackers) {
-
-            PolygonOptions origin = new PolygonOptions();
-            origin.addAll(trackerIt.getPoints());
-            origin.strokeColor(Color.BLUE);
-            mMap.addPolygon(origin);
-
-            for(Pair<Double, Integer> scale : testScales) {
-                TrackScaler trackScaler = new TrackScaler(scale.first);
-                PolygonOptions po = new PolygonOptions();
-                trackerIt.accept(trackScaler);
-                po.addAll(trackScaler.getScaledPoints());
-
-                po.strokeColor(scale.second);
-                mMap.addPolygon(po);
-            }
-        }
-    }*/
-
-
-
-    private BitmapDescriptor getIconFromFile(Context ctx) {
-
-        Bitmap bitmap= BitmapFactory.decodeResource(getResources(), R.drawable.track_final_2);
-        //Bitmap finalBitmap = Bitmap.createScaledBitmap(bitmap, 120,120,false);
-        BitmapDescriptor icon = BitmapDescriptorFactory.fromBitmap(bitmap);
-        return icon;
     }
 
     @Override
@@ -152,19 +65,14 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
         // https://stackoverflow.com/questions/16211783/how-to-add-basic-grids-to-googlemap-api-v2
 
+        trackModel = new TrackModel(mMap,this, R.drawable.track_final_2);
         if (!parser.getData().isEmpty()) {
             PolygonOptions first = parser.getData().get(0);
             if(!first.getPoints().isEmpty()) {
                 LatLng firstLat = first.getPoints().get(0);
-                LatLng testLat = first.getPoints().get(1);
                 Log.d("Debug", "lat :" + firstLat.toString());
 
-                BitmapDescriptor icon = getIconFromFile(this);
-                tractor = mMap.addGroundOverlay(new GroundOverlayOptions().image(icon).position(firstLat, 10));
-                tractor.setBearing(40.0f);
-
-                polylineOptions.add(firstLat);
-                polyline = mMap.addPolyline(polylineOptions);
+                trackModel.initialize(firstLat);
 
                 mMap.moveCamera(CameraUpdateFactory.newLatLng(firstLat));
                 mMap.animateCamera(CameraUpdateFactory.zoomTo(17.0f));
@@ -192,27 +100,11 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
             Log.d("Debug", "getData is Empty !!!");
         }
-        //TestScales();
 
         mMap.setOnMapClickListener(new GoogleMap.OnMapClickListener() {
             @Override
             public void onMapClick(LatLng latLng) {
-
-
-                /*if(polylineOptions.getPoints().isEmpty()) {
-                    polylineOptions.add(latLng);
-                    polyline = mMap.addPolyline(polylineOptions);
-                } else {
-                    //polylineOptions.add(latLng);
-                    polyline.getPoints().add(latLng);
-                    //polyline.setPoints(polylineOptions.getPoints());
-                }*/
-                polylineOptions.add(latLng);
-                polyline.setPoints(polylineOptions.getPoints());
-
-                //polyline.setPoints();
-                tractor.setPosition(latLng);
-
+                trackModel.moveTo(latLng);
                 Log.d("Debug", "Click point: " +
                         Double.toString(latLng.latitude) + ", " +
                         Double.toString(latLng.longitude));
