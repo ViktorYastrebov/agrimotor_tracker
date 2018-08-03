@@ -1,4 +1,4 @@
-package com.test.kmlparser;
+package com.example.victorpc.test;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -75,37 +75,6 @@ public class TrackModel {
          boundBox = m_map.addPolygon(polygonOptions);
     }
 
-    /*
-       function rotatePolygon(polygon,angle) {
-        var map = polygon.getMap();
-        var prj = map.getProjection();
-        var origin = prj.fromLatLngToPoint(polygon.getPath().getAt(0)); //rotate around first point
-
-        var coords = polygon.getPath().getArray().map(function(latLng){
-           var point = prj.fromLatLngToPoint(latLng);
-           var rotatedLatLng =  prj.fromPointToLatLng(rotatePoint(point,origin,angle));
-           return {lat: rotatedLatLng.lat(), lng: rotatedLatLng.lng()};
-        });
-        polygon.setPath(coords);
-    }
-
-    function rotatePoint(point, origin, angle) {
-        var angleRad = angle * Math.PI / 180.0;
-        return {
-            x: Math.cos(angleRad) * (point.x - origin.x) - Math.sin(angleRad) * (point.y - origin.y) + origin.x,
-            y: Math.sin(angleRad) * (point.x - origin.x) + Math.cos(angleRad) * (point.y - origin.y) + origin.y
-        };
-    }
-     */
-    /*
-    private LatLng getRotatedLat(LatLng point, float angle, LatLng aroundPoint) {
-        double angleRad = angle * Math.PI / 180;
-        double x = Math.cos(angleRad) * (point.latitude - aroundPoint.latitude) - Math.sin(angleRad) * (point.longitude - aroundPoint.longitude) + aroundPoint.latitude;
-        double y = Math.sin(angleRad) * (point.latitude - aroundPoint.latitude) + Math.cos(angleRad) * (point.longitude - aroundPoint.longitude) + aroundPoint.longitude;
-        return  new LatLng(x, y);
-    } */
-
-
     private LatLng getRotatedLat(double x, double y, float angle, LatLng aroundPoint) {
         double angleRad = angle * Math.PI / 180;
         double x1 = Math.cos(angleRad) * (x - aroundPoint.latitude) - Math.sin(angleRad) * (x - aroundPoint.longitude) + aroundPoint.latitude;
@@ -157,7 +126,7 @@ public class TrackModel {
           */
          boundBox.setPoints(lst);
 
-         //drawGridBy(bounds.southwest, bounds.northeast);
+         //drawGridBy(p3, p2, angle);
      }
 
     private BitmapDescriptor getIconFromFile() {
@@ -167,32 +136,74 @@ public class TrackModel {
     }
 
     public void moveTo(LatLng p) {
-        //find a way to optimize it. Something like mMap redraw current m_polyline
+        // find a way to optimize it.
+        // Something like mMap redraw current m_polyline
         m_polylineOptions.add(p);
-        m_polyline.setPoints(m_polylineOptions.getPoints());
+        List<LatLng> points =  m_polylineOptions.getPoints();
+        m_polyline.setPoints(points);
         tractor.setPosition(p);
 
         //https://stackoverflow.com/questions/35977204/how-to-draw-a-polygon-rectangle-on-google-maps-with-defined-distance-meters
         float angle = rotateIcon();
         moveBoundBox(angle);
+
+        int size = points.size();
+        if( size > 1) {
+            LatLng p1 = points.get(size - 2);
+            LatLng p2 = points.get(size - 1);
+            drawGridByDirection(p1, p2);
+        }
     }
 
-    private void drawGridBy(/*LatLng p1, LatLng p2,*/ LatLng lineP1, LatLng lineP2) {
+    //DOES NOT WORk PROPERLY
+    private void drawGridBy(/*LatLng p1, LatLng p2,*/ LatLng lineP1, LatLng lineP2, float angle) {
         int seedersCount = 5;
         double length = SphericalUtil.computeDistanceBetween(lineP1, lineP2);
-        Log.d("drawGridBy", "length :" + Double.toString(length));
+        Log.d("drawGridBy", "length :" + Double.toString(length) + ", angle :" + Float.toString(angle));
 
         double seederSizeDelta = length / seedersCount;
-
+        final double normalAngle = 90.0d;
         {
-            LatLng offset = SphericalUtil.computeOffset(lineP1, seederSizeDelta, 0.0);
+            LatLng offset = SphericalUtil.computeOffset(lineP1, seederSizeDelta, normalAngle + angle);
+            Log.d("drawGridBy", "seederSizeDelta : " + Double.toString(seederSizeDelta));
+
             m_map.addCircle(new CircleOptions().center(offset).radius(1.0).fillColor(Color.GREEN));
 
             for(int i=0; i < seedersCount -1 ; ++i) {
-                offset = SphericalUtil.computeOffset(offset, seederSizeDelta, 0.0);
+                offset = SphericalUtil.computeOffset(offset, seederSizeDelta, normalAngle + angle);
                 m_map.addCircle(new CircleOptions().center(offset).radius(1.0).fillColor(Color.GREEN));
             }
         }
+    }
+
+    private void drawGridByDirection( LatLng p1, LatLng p2) {
+        int seederLength = 10;
+
+        double x = p2.latitude - p1.latitude;
+        double y = p2.longitude - p1.longitude;
+
+        //have to check for x = 0, y =0; But i think it's rare case !!!
+        // dot product => cos(Phi) = 0 for orto vectors
+        // V(xv, yv), U(x,y) =>
+        //
+
+        Log.d("drawGridByDirection", "x : " + Double.toString(x) + ", y : " + Double.toString(y));
+
+        final double METER = 0.00001;
+
+        double x1 = seederLength/2 * METER; //x1 = 1
+        double y1 = -x1/y;
+
+        Log.d("drawGridByDirection", "x1 : " + Double.toString(x1) + ", y1 : " + Double.toString(y1));
+
+        LatLng v1 = new LatLng(p2.latitude + x1, p2.longitude + y1);
+        LatLng v2 = new LatLng( p2.latitude + x1, p2.longitude -y1);
+
+        Log.d("drawGridByDirection", "v1(" + Double.toString(v1.latitude) + ", " + Double.toString(v1.longitude) + ")" +
+                                              "v2(" + Double.toString(v2.latitude) + ", " + Double.toString(v2.longitude) + ")");
+
+        m_map.addCircle(new CircleOptions().center(v1).radius(4.0).fillColor(Color.GREEN));
+        m_map.addCircle(new CircleOptions().center(v2).radius(4.0).fillColor(Color.GREEN));
     }
 
     private float rotateIcon() {
