@@ -38,15 +38,19 @@ public class TrackModel {
     private GroundOverlay tractor = null;
     private int iconId;
 
+    SeederAttr m_seederAttr;
+
     private Polygon boundBox = null;
 
-    public TrackModel(GoogleMap m, Context ctx, int iconId)
+    public TrackModel(GoogleMap m, Context ctx, int iconId, int sowerCount, int sowerLength)
     {
         m_owner = ctx;
         m_map = m;
         m_polylineOptions = new PolylineOptions();
         m_polylineOptions.width(4.0f);
         this.iconId = iconId;
+
+        m_seederAttr = new SeederAttr(sowerCount, sowerLength);
     }
 
     public void initialize(LatLng start_p) {
@@ -110,21 +114,22 @@ public class TrackModel {
         m_polyline.setPoints(points);
         tractor.setPosition(p);
 
-        float angle = rotateIcon();
-        int size = points.size();
+        rotateIcon();
+
+        /*int size = points.size();
         if( size > 1) {
             LatLng pInit = points.get(size - 1);
             drawGridByDirection(pInit, angle, 5,  2);
-        }
+        } */
         moveBoundBox();
     }
     // seederLength in metter
     private void drawGridByDirection(LatLng p, float angle, int seedersCount, int seederLength) {
 
-         double offset = 0.0d;
+         //double offset = 0.0d;
          double r = 1.0d;
          if(seedersCount %2 == 1) {
-             offset = r/2;
+             //offset = r/2;
             m_map.addCircle(new CircleOptions().center(p).radius(r).fillColor(Color.GREEN));
          }
 
@@ -139,7 +144,45 @@ public class TrackModel {
         }
     }
 
-    private float rotateIcon() {
+    private void drawGridByDirection2(LatLng srcPoint, LatLng destPoint, float angle) {
+
+        if(m_seederAttr.getSowerCount() % 2 == 1) {
+
+            double startPoint = m_seederAttr.getSowerLength() / 2;
+            double sowerLength = m_seederAttr.getSowerLength();
+            int sowerCount = m_seederAttr.getSowerCount() / 2;
+
+            LatLng src_l_p1 = SphericalUtil.computeOffset(srcPoint, startPoint, 90 + angle);
+            LatLng dest_l_p1 = SphericalUtil.computeOffset(destPoint, startPoint, 90 + angle);
+
+            LatLng src_r_p1 = SphericalUtil.computeOffset(srcPoint, startPoint, -90 + angle);
+            LatLng dest_r_p1 = SphericalUtil.computeOffset(destPoint, startPoint, -90 + angle);
+
+            for(int i = 0; i < sowerCount; ++i) {
+                LatLng l_p2 = SphericalUtil.computeOffset(srcPoint, startPoint + (sowerLength * (i + 1)), 90 + angle );
+                LatLng l_p1 = SphericalUtil.computeOffset(destPoint, startPoint + (sowerLength * (i + 1)), 90 + angle );
+
+                SownCell sc_left = new SownCell(src_l_p1, dest_l_p1, l_p1, l_p2);
+                m_map.addPolygon(sc_left.getPolygon());
+
+                LatLng r_p2 = SphericalUtil.computeOffset(srcPoint, startPoint + (sowerLength * (i+1)), -90 + angle );
+                LatLng r_p1 = SphericalUtil.computeOffset(destPoint, startPoint + (sowerLength * (i+1)), -90 + angle );
+
+                SownCell sc_right = new SownCell(src_r_p1, dest_r_p1, r_p1, r_p2);
+                m_map.addPolygon(sc_right.getPolygon());
+
+                src_l_p1 = l_p2;
+                dest_l_p1 = l_p1;
+                src_r_p1 = r_p2;
+                dest_r_p1 = r_p1;
+            }
+        } else {
+            Log.d("drawGridByDirection2", "NOT IMPELEMNTED");
+        }
+
+    }
+
+    private void rotateIcon() {
         List<LatLng> points = m_polyline.getPoints();
         int list_size = points.size();
         Log.d("TrackModel", "Points size :" + Integer.toString(list_size));
@@ -149,8 +192,8 @@ public class TrackModel {
             float bearing = (float)SphericalUtil.computeHeading(p1, p2);
             Log.d("TrackModel", "angle rotation : " + Float.toString(bearing));
             tractor.setBearing(bearing);
-            return bearing;
+
+            drawGridByDirection2(p1, p2, bearing);
         }
-        return 0.0f;
     }
 }
