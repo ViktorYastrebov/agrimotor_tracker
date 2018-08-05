@@ -49,6 +49,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         // https://stackoverflow.com/questions/16211783/how-to-add-basic-grids-to-googlemap-api-v2
 
         trackModel = new TrackModel(mMap,this, R.drawable.track_final_2, 5, 2);
+        //trackModel = new TrackModel(mMap,this, R.drawable.track_final_2, 6, 2);
+
         if (!parser.getData().isEmpty()) {
             PolygonOptions first = parser.getData().get(0);
             if(!first.getPoints().isEmpty()) {

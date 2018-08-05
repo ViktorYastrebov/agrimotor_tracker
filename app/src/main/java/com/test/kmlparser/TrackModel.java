@@ -146,10 +146,11 @@ public class TrackModel {
 
     private void drawGridByDirection2(LatLng srcPoint, LatLng destPoint, float angle) {
 
+        double sowerLength = m_seederAttr.getSowerLength();
         if(m_seederAttr.getSowerCount() % 2 == 1) {
+            Log.d("drawGridByDirection2", "SOWER IS ODD");
 
             double startPoint = m_seederAttr.getSowerLength() / 2;
-            double sowerLength = m_seederAttr.getSowerLength();
             int sowerCount = m_seederAttr.getSowerCount() / 2;
 
             LatLng src_l_p1 = SphericalUtil.computeOffset(srcPoint, startPoint, 90 + angle);
@@ -157,6 +158,9 @@ public class TrackModel {
 
             LatLng src_r_p1 = SphericalUtil.computeOffset(srcPoint, startPoint, -90 + angle);
             LatLng dest_r_p1 = SphericalUtil.computeOffset(destPoint, startPoint, -90 + angle);
+
+            SownCell middle = new SownCell(src_r_p1, dest_r_p1, dest_l_p1, src_l_p1);
+            m_map.addPolygon(middle.getPolygon());
 
             for(int i = 0; i < sowerCount; ++i) {
                 LatLng l_p2 = SphericalUtil.computeOffset(srcPoint, startPoint + (sowerLength * (i + 1)), 90 + angle );
@@ -177,7 +181,33 @@ public class TrackModel {
                 dest_r_p1 = r_p1;
             }
         } else {
-            Log.d("drawGridByDirection2", "NOT IMPELEMNTED");
+            Log.d("drawGridByDirection2", "SOWER IS EVEN");
+            LatLng src_l_p1 = srcPoint;
+            LatLng dest_l_p1 = destPoint;
+
+            LatLng src_r_p1 = srcPoint;
+            LatLng dest_r_p1 = destPoint;
+
+            int sowerCount = m_seederAttr.getSowerCount() / 2;
+            for(int i = 0; i < sowerCount; ++i) {
+                LatLng l_p2 = SphericalUtil.computeOffset(srcPoint, (sowerLength * (i + 1)), 90 + angle );
+                LatLng l_p1 = SphericalUtil.computeOffset(destPoint, (sowerLength * (i + 1)), 90 + angle );
+
+                SownCell sc_left = new SownCell(src_l_p1, dest_l_p1, l_p1, l_p2);
+                m_map.addPolygon(sc_left.getPolygon());
+
+                LatLng r_p2 = SphericalUtil.computeOffset(srcPoint, (sowerLength * (i+1)), -90 + angle );
+                LatLng r_p1 = SphericalUtil.computeOffset(destPoint, (sowerLength * (i+1)), -90 + angle );
+
+                SownCell sc_right = new SownCell(src_r_p1, dest_r_p1, r_p1, r_p2);
+                m_map.addPolygon(sc_right.getPolygon());
+
+                src_l_p1 = l_p2;
+                dest_l_p1 = l_p1;
+                src_r_p1 = r_p2;
+                dest_r_p1 = r_p1;
+            }
+
         }
 
     }
