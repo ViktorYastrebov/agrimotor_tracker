@@ -13,8 +13,6 @@ import android.util.Log;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.model.BitmapDescriptor;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
-import com.google.android.gms.maps.model.Circle;
-import com.google.android.gms.maps.model.CircleOptions;
 import com.google.android.gms.maps.model.GroundOverlay;
 import com.google.android.gms.maps.model.GroundOverlayOptions;
 import com.google.android.gms.maps.model.LatLng;
@@ -107,49 +105,22 @@ public class TrackModel {
     }
 
     public void moveTo(LatLng p) {
-        // find a way to optimize it.
-        // Something like mMap redraw current m_polyline
+        // TODO: Is there a way to just send redraw signal to GoogleMap it will optimize the memory usage
+        // TODO: instead of m_polyline.setPoitns() use m_polylline.add() + signal
         m_polylineOptions.add(p);
         List<LatLng> points =  m_polylineOptions.getPoints();
         m_polyline.setPoints(points);
         tractor.setPosition(p);
 
         rotateIcon();
-
-        /*int size = points.size();
-        if( size > 1) {
-            LatLng pInit = points.get(size - 1);
-            drawGridByDirection(pInit, angle, 5,  2);
-        } */
         moveBoundBox();
-    }
-    // seederLength in metter
-    private void drawGridByDirection(LatLng p, float angle, int seedersCount, int seederLength) {
-
-         //double offset = 0.0d;
-         double r = 1.0d;
-         if(seedersCount %2 == 1) {
-             //offset = r/2;
-            m_map.addCircle(new CircleOptions().center(p).radius(r).fillColor(Color.GREEN));
-         }
-
-        int partCount = seedersCount / 2;
-        for(int i =0; i < partCount; ++i) {
-            LatLng v = SphericalUtil.computeOffset(p, seederLength *(i+1), 90 + angle);
-            m_map.addCircle(new CircleOptions().center(v).radius(r).fillColor(Color.GREEN));
-        }
-        for(int i =0; i < partCount; ++i) {
-            LatLng v = SphericalUtil.computeOffset(p, seederLength *(i+1), -90 + angle);
-            m_map.addCircle(new CircleOptions().center(v).radius(r).fillColor(Color.GREEN));
-        }
     }
 
     private void drawGridByDirection2(LatLng srcPoint, LatLng destPoint, float angle) {
 
+        //TODO: optimize it to single for LOOP !!!. IT should not metter: even or odd !!!
         double sowerLength = m_seederAttr.getSowerLength();
         if(m_seederAttr.getSowerCount() % 2 == 1) {
-            Log.d("drawGridByDirection2", "SOWER IS ODD");
-
             double startPoint = m_seederAttr.getSowerLength() / 2;
             int sowerCount = m_seederAttr.getSowerCount() / 2;
 
@@ -181,7 +152,6 @@ public class TrackModel {
                 dest_r_p1 = r_p1;
             }
         } else {
-            Log.d("drawGridByDirection2", "SOWER IS EVEN");
             LatLng src_l_p1 = srcPoint;
             LatLng dest_l_p1 = destPoint;
 
@@ -207,7 +177,6 @@ public class TrackModel {
                 src_r_p1 = r_p2;
                 dest_r_p1 = r_p1;
             }
-
         }
 
     }

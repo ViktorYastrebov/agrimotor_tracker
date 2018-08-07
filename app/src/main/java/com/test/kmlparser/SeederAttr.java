@@ -3,7 +3,7 @@ package com.test.kmlparser;
 public class SeederAttr {
 
     private int m_sowerCount;
-    private int m_sowerLength; //metter
+    private int m_sowerLength; //in meters
 
     SeederAttr(int sowerCount, int sowerLength)
     {

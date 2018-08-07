@@ -1,4 +1,4 @@
-package com.test.kmlparser;
+package com.test.kmlparser.old_test;
 
 import java.util.ArrayList;
 import java.util.Arrays;

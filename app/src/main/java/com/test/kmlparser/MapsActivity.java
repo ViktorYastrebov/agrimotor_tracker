@@ -1,5 +1,10 @@
 package com.test.kmlparser;
 
+// TODO: 1) real data applying to movements
+// TODO: 2) make clear seeder possitions
+// TODO: 3) add DB/ bounding options
+// TODO: 4) cross sections
+
 import android.graphics.Color;
 import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
@@ -48,7 +53,9 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
         // https://stackoverflow.com/questions/16211783/how-to-add-basic-grids-to-googlemap-api-v2
 
-        trackModel = new TrackModel(mMap,this, R.drawable.track_final_2, 5, 2);
+
+        //seeder count, & length
+        trackModel = new TrackModel(mMap,this, R.drawable.track_final_2, 8, 2);
         //trackModel = new TrackModel(mMap,this, R.drawable.track_final_2, 6, 2);
 
         if (!parser.getData().isEmpty()) {
