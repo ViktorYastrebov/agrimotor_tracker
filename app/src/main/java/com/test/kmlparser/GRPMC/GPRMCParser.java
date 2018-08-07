@@ -2,8 +2,8 @@ package com.test.kmlparser.GRPMC;
 
 import com.google.android.gms.maps.model.LatLng;
 
-import java.time.LocalTime;
-import java.time.*;
+//import java.time.LocalTime;
+//import java.time.*;
 
 public class GPRMCParser {
 
@@ -32,8 +32,8 @@ public class GPRMCParser {
 	static private final String GPRMC_MARKER = "$GPRMC";
 	
 	//make it java.util.Optional
-	private LocalTime time;
-	private LocalDate date;
+	//private LocalTime time;
+	//private LocalDate date;
 	
 	private boolean validityOfFix;
 	
