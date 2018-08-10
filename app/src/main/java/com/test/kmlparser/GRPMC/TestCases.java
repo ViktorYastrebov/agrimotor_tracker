@@ -46,7 +46,7 @@ public class TestCases {
 	public void GPRMCParserTest () {
 		//In the original one it sends data in ASCII (1 byte)
 		// not char(UTF-16) as it in Java by default
-		GPRMCFileParser p = new GPRMCFileParser("D5_1_GPS-2018-04-22.txt");
-		p.process();
+		//GPRMCFileParser p = new GPRMCFileParser("D5_1_GPS-2018-04-22.txt");
+		//p.process();
 	}
 }

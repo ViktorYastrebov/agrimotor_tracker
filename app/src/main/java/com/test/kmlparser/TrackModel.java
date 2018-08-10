@@ -16,6 +16,7 @@ import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.GroundOverlay;
 import com.google.android.gms.maps.model.GroundOverlayOptions;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.CameraUpdateFactory;
 
 import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.Polygon;
@@ -51,57 +52,61 @@ public class TrackModel {
         m_seederAttr = new SeederAttr(sowerCount, sowerLength);
     }
 
-    public void initialize(LatLng start_p) {
+    public void initialize(final LatLng start_p) {
+
+        //https://github.com/deepstreamIO/deepstream.io-client-java/issues/116
+        // must be called from the main thread !!! ???
+
         if(tractor == null && m_polylineOptions.getPoints().isEmpty()) {
-            tractor = m_map.addGroundOverlay(new GroundOverlayOptions()
-                    .image(getIconFromFile())
-                    .position(start_p, 10)
-                    .anchor(0.5f, 0.5f)
-            );
+
+
+
+            /*
             tractor.setBearing(0);
             m_polylineOptions.add(start_p);
-            m_polyline = m_map.addPolyline(m_polylineOptions);
 
-            drawBounds();
-        }
-    }
-
-    private void drawBounds() {
-        LatLngBounds bounds = tractor.getBounds();
-        PolygonOptions polygonOptions = new PolygonOptions()
+            LatLngBounds bounds = tractor.getBounds();
+            PolygonOptions polygonOptions = new PolygonOptions()
                     .add(new LatLng(bounds.northeast.latitude, bounds.northeast.longitude))
                     .add(new LatLng(bounds.southwest.latitude, bounds.northeast.longitude))
                     .add(new LatLng(bounds.southwest.latitude, bounds.southwest.longitude))
                     .add(new LatLng(bounds.northeast.latitude, bounds.southwest.longitude))
                     .strokeColor(Color.GREEN);
 
-         boundBox = m_map.addPolygon(polygonOptions);
-    }
-     private void moveBoundBox() {
+            //boundBox = m_map.addPolygon(polygonOptions);
 
-         LatLngBounds bounds = tractor.getBounds();
-         //TODO: Memory usage issue
-         List<LatLng> lst = new ArrayList<LatLng>();
+//TODO: add somkind of Wrappers for makeing operation in UIThread.
+//TODO: read android documentation !!!
 
-         LatLng p1 = new LatLng(bounds.northeast.latitude, bounds.northeast.longitude);
-         LatLng p2 = new LatLng(bounds.southwest.latitude, bounds.northeast.longitude);
-         LatLng p3 = new LatLng(bounds.southwest.latitude, bounds.southwest.longitude);
-         LatLng p4 = new LatLng(bounds.northeast.latitude, bounds.southwest.longitude);
-         /*
-         m_map.addCircle(new CircleOptions().center(p1).radius(1.0).fillColor(Color.rgb(255,215,0)));  //gold
-         m_map.addCircle(new CircleOptions().center(p2).radius(1.0).fillColor(Color.rgb(220,20,60))); //red
-         m_map.addCircle(new CircleOptions().center(p3).radius(1.0).fillColor(Color.rgb(0,128,0)));  //green
-         m_map.addCircle(new CircleOptions().center(p4).radius(1.0).fillColor(Color.rgb(0,0,128)));  //blue
-         */
+            ((MapsActivity)m_owner). runOnUiThread(new Runnable() {
+                public void run() {
+                    tractor = m_map.addGroundOverlay(new GroundOverlayOptions()
+                            .image(getIconFromFile())
+                            .position(start_p, 10)
+                            .anchor(0.5f, 0.5f)
+                    );
+                    Log.d("UI thread", "I am the UI thread");
+                }
+            });
+            */
 
-         lst.add(p1); lst.add(p2); lst.add(p3); lst.add(p4);
-         boundBox.setPoints(lst);
-     }
 
-    private BitmapDescriptor getIconFromFile() {
-        Bitmap bitmap= BitmapFactory.decodeResource(m_owner.getResources(), iconId);
-        BitmapDescriptor icon = BitmapDescriptorFactory.fromBitmap(bitmap);
-        return icon;
+            tractor = m_map.addGroundOverlay(new GroundOverlayOptions()
+                    .image(getIconFromFile())
+                    .position(start_p, 10)
+                    .anchor(0.5f, 0.5f)
+            );
+
+            tractor.setBearing(0);
+            m_polylineOptions.add(start_p);
+            m_polyline = m_map.addPolyline(m_polylineOptions);
+
+            init_bounds();
+
+            m_map.moveCamera(CameraUpdateFactory.newLatLng(start_p));
+            m_map.animateCamera(CameraUpdateFactory.zoomTo(17.0f));
+
+        }
     }
 
     public void moveTo(LatLng p) {
@@ -112,11 +117,47 @@ public class TrackModel {
         m_polyline.setPoints(points);
         tractor.setPosition(p);
 
-        rotateIcon();
-        moveBoundBox();
+        updateBearing();
+        updateBounds();
     }
 
-    private void drawGridByDirection2(LatLng srcPoint, LatLng destPoint, float angle) {
+    public Context getContext() {
+        return m_owner;
+    }
+
+    private void init_bounds() {
+        LatLngBounds bounds = tractor.getBounds();
+        PolygonOptions polygonOptions = new PolygonOptions()
+                .add(new LatLng(bounds.northeast.latitude, bounds.northeast.longitude))
+                .add(new LatLng(bounds.southwest.latitude, bounds.northeast.longitude))
+                .add(new LatLng(bounds.southwest.latitude, bounds.southwest.longitude))
+                .add(new LatLng(bounds.northeast.latitude, bounds.southwest.longitude))
+                .strokeColor(Color.GREEN);
+
+        boundBox = m_map.addPolygon(polygonOptions);
+    }
+
+    private void updateBounds() {
+
+        LatLngBounds bounds = tractor.getBounds();
+        //TODO: Memory usage issue
+        List<LatLng> lst = new ArrayList<LatLng>();
+
+        LatLng p1 = new LatLng(bounds.northeast.latitude, bounds.northeast.longitude);
+        LatLng p2 = new LatLng(bounds.southwest.latitude, bounds.northeast.longitude);
+        LatLng p3 = new LatLng(bounds.southwest.latitude, bounds.southwest.longitude);
+        LatLng p4 = new LatLng(bounds.northeast.latitude, bounds.southwest.longitude);
+        lst.add(p1); lst.add(p2); lst.add(p3); lst.add(p4);
+        boundBox.setPoints(lst);
+    }
+
+    private BitmapDescriptor getIconFromFile() {
+        Bitmap bitmap= BitmapFactory.decodeResource(m_owner.getResources(), iconId);
+        BitmapDescriptor icon = BitmapDescriptorFactory.fromBitmap(bitmap);
+        return icon;
+    }
+
+    private void udpateSeedTrack(LatLng srcPoint, LatLng destPoint, float angle) {
 
         //TODO: optimize it to single for LOOP !!!. IT should not metter: even or odd !!!
         double sowerLength = m_seederAttr.getSowerLength();
@@ -181,7 +222,7 @@ public class TrackModel {
 
     }
 
-    private void rotateIcon() {
+    private void updateBearing() {
         List<LatLng> points = m_polyline.getPoints();
         int list_size = points.size();
         Log.d("TrackModel", "Points size :" + Integer.toString(list_size));
@@ -192,7 +233,7 @@ public class TrackModel {
             Log.d("TrackModel", "angle rotation : " + Float.toString(bearing));
             tractor.setBearing(bearing);
 
-            drawGridByDirection2(p1, p2, bearing);
+            udpateSeedTrack(p1, p2, bearing);
         }
     }
 }

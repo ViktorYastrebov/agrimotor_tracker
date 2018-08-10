@@ -5,6 +5,8 @@ package com.test.kmlparser;
 // TODO: 3) add DB/ bounding options
 // TODO: 4) cross sections
 
+import java.util.Timer;
+
 import android.graphics.Color;
 import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
@@ -18,9 +20,7 @@ import com.google.android.gms.maps.model.LatLng;
 // http://www.tutorialspoint.com/java_xml/java_dom_parse_document.htm
 // https://www.programcreek.com/java-api-examples/?api=com.google.android.gms.maps.GoogleMap.OnMapClickListener
 // https://github.com/googlemaps/android-samples/blob/master/ApiDemos/java/app/src/main/java/com/example/mapdemo/CameraDemoActivity.java
-
-import com.google.android.gms.maps.model.MarkerOptions;
-import com.google.android.gms.maps.model.PolygonOptions;
+// https://stackoverflow.com/questions/12850143/android-basics-running-code-in-the-ui-thread
 
 public class MapsActivity extends FragmentActivity implements OnMapReadyCallback {
 
@@ -58,6 +58,13 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         trackModel = new TrackModel(mMap,this, R.drawable.track_final_2, 8, 2);
         //trackModel = new TrackModel(mMap,this, R.drawable.track_final_2, 6, 2);
 
+        //trackModel.initialize();
+
+        Timer timer = new Timer();
+        DataReceiver dr = new DataReceiver(trackModel, timer);
+        timer.schedule(dr, 0, 1000);
+
+        /*
         if (!parser.getData().isEmpty()) {
             PolygonOptions first = parser.getData().get(0);
             if(!first.getPoints().isEmpty()) {
@@ -91,8 +98,9 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             mMap.moveCamera(CameraUpdateFactory.newLatLng(current));
 
             Log.d("Debug", "getData is Empty !!!");
-        }
+        } */
 
+        /*
         mMap.setOnMapClickListener(new GoogleMap.OnMapClickListener() {
             @Override
             public void onMapClick(LatLng latLng) {
@@ -101,6 +109,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                         Double.toString(latLng.latitude) + ", " +
                         Double.toString(latLng.longitude));
              }
-        });
+        }); */
     }
 }
