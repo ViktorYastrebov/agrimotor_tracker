@@ -37,6 +37,9 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             "M_1_GPS-2018-04-22.txt",
             "M_2_GPS-2018-04-22.txt",
             "M_3_GPS-2018-04-22.txt"
+            //"test1.txt",
+            //"test2.txt"
+
     };
 
     @Override
@@ -71,7 +74,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
 
         trackModel = new TrackModel(mMap, this, R.drawable.track_final_2, 8, 2);
-        GPRMCFileParser file_emul = new GPRMCFileParser("tracks/" + files[3], this);
+        GPRMCFileParser file_emul = new GPRMCFileParser("tracks/" + files[1], this);
 
         m_dataListener = new DataListener(m_main_handler, file_emul, trackModel);
         Thread dataThreadListener = new Thread(m_dataListener);

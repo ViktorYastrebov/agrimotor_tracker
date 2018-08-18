@@ -12,8 +12,9 @@ public class DataListener implements Runnable {
     private Handler m_handler;
     private GPRMCFileParser m_parser;
     private TrackModel m_track_model;
+    private final long timerPause = 100; //ms
 
-    private int initCameraPoints = 3;
+    private int initCameraPoints = 30;
 
     public DataListener(Handler main_handler, GPRMCFileParser parser, TrackModel trackModel) {
         this.m_handler = main_handler;
@@ -24,17 +25,18 @@ public class DataListener implements Runnable {
     @Override
     public void run() {
 
+        // Delta around 3-5 meters. On curve - make it more detailed
         try {
-            LatLng p = m_parser.process();
+            LatLng p = m_parser.process(); //data
             if(p != null) {
-                Thread.sleep(2000);
+                Thread.sleep(timerPause); //emulation of read()
                 //m_handler.postDelayed( new InitPoster(m_track_model,p), 2000);
                 m_handler.post(new InitPoster(m_track_model,p));
             }
 
             p = m_parser.process();
             while( p != null) {
-                Thread.sleep(2000);
+                Thread.sleep(timerPause);
                 if(initCameraPoints != 0) {
                     //m_handler.postDelayed( new MessagePoster(m_track_model, p), 2000);
                     m_handler.post(new MessagePoster(m_track_model, p, true));
