@@ -8,6 +8,7 @@ package com.test.kmlparser;
 import java.util.Timer;
 
 import android.graphics.Color;
+import android.os.Handler;
 import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -16,6 +17,7 @@ import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
+import com.test.kmlparser.GRPMC.GPRMCFileParser;
 
 // http://www.tutorialspoint.com/java_xml/java_dom_parse_document.htm
 // https://www.programcreek.com/java-api-examples/?api=com.google.android.gms.maps.GoogleMap.OnMapClickListener
@@ -27,6 +29,15 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private GoogleMap mMap;
     private KMLParser parser;
     private TrackModel trackModel;
+    private Handler m_main_handler;
+    private DataListener m_dataListener;
+
+    private final String files[] = {
+            "D5_1_GPS-2018-04-22.txt",
+            "M_1_GPS-2018-04-22.txt",
+            "M_2_GPS-2018-04-22.txt",
+            "M_3_GPS-2018-04-22.txt"
+    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -36,7 +47,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
-        parser = new KMLParser("Doslidnicke.kml", this);
+        //parser = new KMLParser("Doslidnicke.kml", this);
+        m_main_handler = new Handler();
     }
 
     @Override
@@ -53,16 +65,17 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
         // https://stackoverflow.com/questions/16211783/how-to-add-basic-grids-to-googlemap-api-v2
 
+        // https://stackoverflow.com/questions/8204298/android-bluetooth-socket-tutorial-for-non-blocking-communication
+        // https://android.okhelp.cz/timer-simple-timertask-java-android-example/
+        // http://android.okhelp.cz/timer-task-timertask-run-cancel-android-example/
 
-        //seeder count, & length
-        trackModel = new TrackModel(mMap,this, R.drawable.track_final_2, 8, 2);
-        //trackModel = new TrackModel(mMap,this, R.drawable.track_final_2, 6, 2);
 
-        //trackModel.initialize();
+        trackModel = new TrackModel(mMap, this, R.drawable.track_final_2, 8, 2);
+        GPRMCFileParser file_emul = new GPRMCFileParser("tracks/" + files[3], this);
 
-        Timer timer = new Timer();
-        DataReceiver dr = new DataReceiver(trackModel, timer);
-        timer.schedule(dr, 0, 1000);
+        m_dataListener = new DataListener(m_main_handler, file_emul, trackModel);
+        Thread dataThreadListener = new Thread(m_dataListener);
+        dataThreadListener.start();
 
         /*
         if (!parser.getData().isEmpty()) {

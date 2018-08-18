@@ -1,6 +1,7 @@
 package com.test.kmlparser;
 
 
+import java.nio.DoubleBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -13,12 +14,14 @@ import android.util.Log;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.model.BitmapDescriptor;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
+import com.google.android.gms.maps.model.CircleOptions;
 import com.google.android.gms.maps.model.GroundOverlay;
 import com.google.android.gms.maps.model.GroundOverlayOptions;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.CameraUpdateFactory;
 
 import com.google.android.gms.maps.model.LatLngBounds;
+import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.Polygon;
 import com.google.android.gms.maps.model.Polyline;
 import com.google.android.gms.maps.model.PolylineOptions;
@@ -52,45 +55,12 @@ public class TrackModel {
         m_seederAttr = new SeederAttr(sowerCount, sowerLength);
     }
 
-    public void initialize(final LatLng start_p) {
+    public void initialize(LatLng start_p) {
 
         //https://github.com/deepstreamIO/deepstream.io-client-java/issues/116
         // must be called from the main thread !!! ???
 
         if(tractor == null && m_polylineOptions.getPoints().isEmpty()) {
-
-
-
-            /*
-            tractor.setBearing(0);
-            m_polylineOptions.add(start_p);
-
-            LatLngBounds bounds = tractor.getBounds();
-            PolygonOptions polygonOptions = new PolygonOptions()
-                    .add(new LatLng(bounds.northeast.latitude, bounds.northeast.longitude))
-                    .add(new LatLng(bounds.southwest.latitude, bounds.northeast.longitude))
-                    .add(new LatLng(bounds.southwest.latitude, bounds.southwest.longitude))
-                    .add(new LatLng(bounds.northeast.latitude, bounds.southwest.longitude))
-                    .strokeColor(Color.GREEN);
-
-            //boundBox = m_map.addPolygon(polygonOptions);
-
-//TODO: add somkind of Wrappers for makeing operation in UIThread.
-//TODO: read android documentation !!!
-
-            ((MapsActivity)m_owner). runOnUiThread(new Runnable() {
-                public void run() {
-                    tractor = m_map.addGroundOverlay(new GroundOverlayOptions()
-                            .image(getIconFromFile())
-                            .position(start_p, 10)
-                            .anchor(0.5f, 0.5f)
-                    );
-                    Log.d("UI thread", "I am the UI thread");
-                }
-            });
-            */
-
-
             tractor = m_map.addGroundOverlay(new GroundOverlayOptions()
                     .image(getIconFromFile())
                     .position(start_p, 10)
@@ -105,20 +75,23 @@ public class TrackModel {
 
             m_map.moveCamera(CameraUpdateFactory.newLatLng(start_p));
             m_map.animateCamera(CameraUpdateFactory.zoomTo(17.0f));
-
         }
     }
 
     public void moveTo(LatLng p) {
         // TODO: Is there a way to just send redraw signal to GoogleMap it will optimize the memory usage
         // TODO: instead of m_polyline.setPoitns() use m_polylline.add() + signal
+
+        /*Log.d("DataReceiver", "Moved To : " +
+                Double.toString(p.latitude) + "," + Double.toString(p.longitude)); */
+
+        //m_map.addCircle(new CircleOptions().strokeColor(Color.GREEN).radius(10.0));
+
         m_polylineOptions.add(p);
         List<LatLng> points =  m_polylineOptions.getPoints();
         m_polyline.setPoints(points);
         tractor.setPosition(p);
-
         updateBearing();
-        updateBounds();
     }
 
     public Context getContext() {
@@ -127,16 +100,16 @@ public class TrackModel {
 
     private void init_bounds() {
         LatLngBounds bounds = tractor.getBounds();
-        PolygonOptions polygonOptions = new PolygonOptions()
+        final PolygonOptions polygonOptions = new PolygonOptions()
                 .add(new LatLng(bounds.northeast.latitude, bounds.northeast.longitude))
                 .add(new LatLng(bounds.southwest.latitude, bounds.northeast.longitude))
                 .add(new LatLng(bounds.southwest.latitude, bounds.southwest.longitude))
                 .add(new LatLng(bounds.northeast.latitude, bounds.southwest.longitude))
                 .strokeColor(Color.GREEN);
-
         boundBox = m_map.addPolygon(polygonOptions);
     }
 
+    /*
     private void updateBounds() {
 
         LatLngBounds bounds = tractor.getBounds();
@@ -149,7 +122,7 @@ public class TrackModel {
         LatLng p4 = new LatLng(bounds.northeast.latitude, bounds.southwest.longitude);
         lst.add(p1); lst.add(p2); lst.add(p3); lst.add(p4);
         boundBox.setPoints(lst);
-    }
+    } */
 
     private BitmapDescriptor getIconFromFile() {
         Bitmap bitmap= BitmapFactory.decodeResource(m_owner.getResources(), iconId);
@@ -160,6 +133,9 @@ public class TrackModel {
     private void udpateSeedTrack(LatLng srcPoint, LatLng destPoint, float angle) {
 
         //TODO: optimize it to single for LOOP !!!. IT should not metter: even or odd !!!
+
+        //List<PolygonOptions> polygons = new ArrayList<>();
+
         double sowerLength = m_seederAttr.getSowerLength();
         if(m_seederAttr.getSowerCount() % 2 == 1) {
             double startPoint = m_seederAttr.getSowerLength() / 2;
@@ -172,6 +148,7 @@ public class TrackModel {
             LatLng dest_r_p1 = SphericalUtil.computeOffset(destPoint, startPoint, -90 + angle);
 
             SownCell middle = new SownCell(src_r_p1, dest_r_p1, dest_l_p1, src_l_p1);
+            //polygons.add(middle.getPolygon());
             m_map.addPolygon(middle.getPolygon());
 
             for(int i = 0; i < sowerCount; ++i) {
@@ -180,12 +157,14 @@ public class TrackModel {
 
                 SownCell sc_left = new SownCell(src_l_p1, dest_l_p1, l_p1, l_p2);
                 m_map.addPolygon(sc_left.getPolygon());
+                //polygons.add(sc_left.getPolygon());
 
                 LatLng r_p2 = SphericalUtil.computeOffset(srcPoint, startPoint + (sowerLength * (i+1)), -90 + angle );
                 LatLng r_p1 = SphericalUtil.computeOffset(destPoint, startPoint + (sowerLength * (i+1)), -90 + angle );
 
                 SownCell sc_right = new SownCell(src_r_p1, dest_r_p1, r_p1, r_p2);
                 m_map.addPolygon(sc_right.getPolygon());
+                //polygons.add(sc_right.getPolygon());
 
                 src_l_p1 = l_p2;
                 dest_l_p1 = l_p1;
@@ -206,12 +185,14 @@ public class TrackModel {
 
                 SownCell sc_left = new SownCell(src_l_p1, dest_l_p1, l_p1, l_p2);
                 m_map.addPolygon(sc_left.getPolygon());
+                //polygons.add(sc_left.getPolygon());
 
                 LatLng r_p2 = SphericalUtil.computeOffset(srcPoint, (sowerLength * (i+1)), -90 + angle );
                 LatLng r_p1 = SphericalUtil.computeOffset(destPoint, (sowerLength * (i+1)), -90 + angle );
 
                 SownCell sc_right = new SownCell(src_r_p1, dest_r_p1, r_p1, r_p2);
                 m_map.addPolygon(sc_right.getPolygon());
+                //polygons.add(sc_right.getPolygon());
 
                 src_l_p1 = l_p2;
                 dest_l_p1 = l_p1;
@@ -220,20 +201,32 @@ public class TrackModel {
             }
         }
 
+        /*
+        for(PolygonOptions p : polygons) {
+            m_map.addPolygon(p);
+        } */
+        tractor.setBearing(angle);
     }
 
     private void updateBearing() {
         List<LatLng> points = m_polyline.getPoints();
         int list_size = points.size();
-        Log.d("TrackModel", "Points size :" + Integer.toString(list_size));
+        //Log.d("TrackModel", "Points size :" + Integer.toString(list_size));
         if(list_size > 1) {
             LatLng p1 = points.get(list_size - 2);
             LatLng p2 = points.get(list_size - 1);
             float bearing = (float)SphericalUtil.computeHeading(p1, p2);
-            Log.d("TrackModel", "angle rotation : " + Float.toString(bearing));
-            tractor.setBearing(bearing);
-
+            //Log.d("TrackModel", "angle rotation : " + Float.toString(bearing));
+            //tractor.setBearing(bearing);
             udpateSeedTrack(p1, p2, bearing);
         }
     }
+
+    public void TargetCamera(LatLng p) {
+        m_map.moveCamera(CameraUpdateFactory.newLatLng(p));
+        m_map.animateCamera(CameraUpdateFactory.zoomTo(17.0f));
+    }
+    /*public void visualTrace(LatLng p) {
+        m_map.addMarker(new MarkerOptions().position(p));
+    } */
 }
