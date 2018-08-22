@@ -1,6 +1,8 @@
 package com.test.kmlparser.algo;
 
 import com.google.android.gms.maps.model.LatLng;
+import com.google.maps.android.SphericalUtil;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -32,13 +34,13 @@ public class GPSPathScaler {
     public void initialize(LatLng p) {
         m_all_points.add(p);
         for( Map.Entry<Double, GPSTrack> elem  : m_scales.entrySet()) {
-            elem.getValue().add(p);
+            elem.getValue().initialize(p);
         }
         m_keys = new ArrayList(m_scales.keySet());
         m_last_key = m_keys.size() - 1;
     }
 
-    public void process(LatLng p) {
+    public double process(LatLng p) {
 
         double key = m_keys.get(m_last_key).doubleValue();
         GPSTrack prevPoints = m_scales.get(key);
@@ -51,7 +53,11 @@ public class GPSPathScaler {
             prevPoints = points;
         }
         addHelper(m_all_points, prevPoints.getPoints(), 0.0, key, p);
+
+        LatLng prev = m_all_points.get(m_all_points.size() - 1);
+        double bearing = SphericalUtil.computeHeading(prev, p);
         m_all_points.add(p);
+        return bearing;
 
         /*
         addHelper(scale2, p, 4.0, 8.0, scale3);
@@ -66,7 +72,15 @@ public class GPSPathScaler {
         if(from.size() > 1) {
             LatLng p1 = from.get(from.size() - 2);
             LatLng p2 = from.get(from.size() - 1);
-            double s = calcTriangleSquare(p1, p2, p);
+            //double s = calcTriangleSquare(p1, p2, p);
+            int size = from.size();
+            List<LatLng> triangle = from.subList( size - 2, size -1);
+            triangle.add(p);
+            /*List<LatLng> triangle = new ArrayList<>();
+            triangle.add(p1);
+            triangle.add(p2);
+            triangle.add(p); */
+            double s = SphericalUtil.computeArea(triangle);
             if(minScale < s && maxScale > s) {
                 to.add(p);
             }

@@ -1,6 +1,7 @@
 package com.test.kmlparser;
 
 
+import java.util.ArrayList;
 import java.util.List;
 
 import android.content.Context;
@@ -26,16 +27,21 @@ import com.google.android.gms.maps.model.PolylineOptions;
 import com.google.android.gms.maps.model.PolygonOptions;
 
 import com.google.maps.android.SphericalUtil;
+import com.test.kmlparser.algo.GPSPathScaler;
+import com.test.kmlparser.algo.GPSTrack;
 
 public class TrackModel {
 
     private Context m_owner = null;
     private GoogleMap m_map = null;
 
-    private PolylineOptions m_polylineOptions = null;
-    private Polyline m_polyline = null;
+    //private PolylineOptions m_polylineOptions = null;
+    //private Polyline m_polyline = null;
     private GroundOverlay tractor = null;
     private int iconId;
+
+    private List<GPSTrack> m_track_list;
+    private GPSPathScaler m_track_scaler;
 
     SeederAttr m_seederAttr;
 
@@ -45,12 +51,18 @@ public class TrackModel {
     {
         m_owner = ctx;
         m_map = m;
-        m_polylineOptions = new PolylineOptions();
-        m_polylineOptions.width(4.0f);
+        //m_polylineOptions = new PolylineOptions();
+        //m_polylineOptions.width(4.0f);
         this.iconId = iconId;
         //m_view = view;
 
         m_seederAttr = new SeederAttr(sowerCount, sowerLength);
+
+        m_track_list = new ArrayList<>();
+        //temporary test
+        m_track_list.add( new DrawableGPSTrack(4.0, m_map, Color.BLUE));
+        m_track_list.add( new DrawableGPSTrack( 10.0, m_map, Color.GREEN));
+        m_track_scaler = new GPSPathScaler(m_track_list);
     }
 
     public void initialize(LatLng start_p) {
@@ -58,6 +70,15 @@ public class TrackModel {
         //https://github.com/deepstreamIO/deepstream.io-client-java/issues/116
         // must be called from the main thread !!! ???
 
+        tractor = m_map.addGroundOverlay(new GroundOverlayOptions()
+                .image(getIconFromFile())
+                .position(start_p, 10)
+                .anchor(0.5f, 0.5f)
+        );
+        //tractor.setBearing(0);
+
+        m_track_scaler.initialize(start_p);
+        /*
         if(tractor == null && m_polylineOptions.getPoints().isEmpty()) {
             tractor = m_map.addGroundOverlay(new GroundOverlayOptions()
                     .image(getIconFromFile())
@@ -74,6 +95,7 @@ public class TrackModel {
             m_map.moveCamera(CameraUpdateFactory.newLatLng(start_p));
             m_map.animateCamera(CameraUpdateFactory.zoomTo(17.0f));
         }
+        */
     }
 
     public void moveTo(LatLng p) {
@@ -83,11 +105,17 @@ public class TrackModel {
         // it has been added, you can call Polyline.setPoints()
         // and provide a new list of points for the polyline.
 
+        /*
         List<LatLng> points = m_polyline.getPoints();
         points.add(p);
         m_polyline.setPoints(points);
         tractor.setPosition(p);
         updateBearing();
+        */
+
+        double bearing = m_track_scaler.process(p);
+        tractor.setPosition(p);
+        tractor.setBearing((float)bearing);
 
     }
 
@@ -205,6 +233,7 @@ public class TrackModel {
         //tractor.setBearing(angle);
     }
 
+    /*
     private void updateBearing() {
         List<LatLng> points = m_polyline.getPoints();
         int list_size = points.size();
@@ -215,7 +244,7 @@ public class TrackModel {
             tractor.setBearing(bearing);
             //udpateSeedTrack(p1, p2, bearing);
         }
-    }
+    } */
 
     public void TargetCamera(LatLng p) {
         m_map.moveCamera(CameraUpdateFactory.newLatLng(p));
