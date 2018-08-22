@@ -1,15 +1,12 @@
 package com.test.kmlparser;
 
 
-import java.nio.DoubleBuffer;
-import java.util.ArrayList;
 import java.util.List;
 
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
-import android.util.Log;
 
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.model.BitmapDescriptor;
@@ -51,6 +48,7 @@ public class TrackModel {
         m_polylineOptions = new PolylineOptions();
         m_polylineOptions.width(4.0f);
         this.iconId = iconId;
+        //m_view = view;
 
         m_seederAttr = new SeederAttr(sowerCount, sowerLength);
     }
@@ -71,7 +69,7 @@ public class TrackModel {
             m_polylineOptions.add(start_p);
             m_polyline = m_map.addPolyline(m_polylineOptions);
 
-            init_bounds();
+            //init_bounds();
 
             m_map.moveCamera(CameraUpdateFactory.newLatLng(start_p));
             m_map.animateCamera(CameraUpdateFactory.zoomTo(17.0f));
@@ -79,19 +77,18 @@ public class TrackModel {
     }
 
     public void moveTo(LatLng p) {
-        // TODO: Is there a way to just send redraw signal to GoogleMap it will optimize the memory usage
-        // TODO: instead of m_polyline.setPoitns() use m_polylline.add() + signal
+        // May be THERE IS A HARD WAY TO JUST UPDATE THE CURRENT points + Force to redraw !!!!
+        //From documentation:
+        // To alter the shape of the polyline after
+        // it has been added, you can call Polyline.setPoints()
+        // and provide a new list of points for the polyline.
 
-        /*Log.d("DataReceiver", "Moved To : " +
-                Double.toString(p.latitude) + "," + Double.toString(p.longitude)); */
-
-        //m_map.addCircle(new CircleOptions().strokeColor(Color.GREEN).radius(10.0));
-
-        m_polylineOptions.add(p);
-        List<LatLng> points =  m_polylineOptions.getPoints();
+        List<LatLng> points = m_polyline.getPoints();
+        points.add(p);
         m_polyline.setPoints(points);
         tractor.setPosition(p);
         updateBearing();
+
     }
 
     public Context getContext() {
@@ -205,20 +202,18 @@ public class TrackModel {
         for(PolygonOptions p : polygons) {
             m_map.addPolygon(p);
         } */
-        tractor.setBearing(angle);
+        //tractor.setBearing(angle);
     }
 
     private void updateBearing() {
         List<LatLng> points = m_polyline.getPoints();
         int list_size = points.size();
-        //Log.d("TrackModel", "Points size :" + Integer.toString(list_size));
         if(list_size > 1) {
             LatLng p1 = points.get(list_size - 2);
             LatLng p2 = points.get(list_size - 1);
             float bearing = (float)SphericalUtil.computeHeading(p1, p2);
-            //Log.d("TrackModel", "angle rotation : " + Float.toString(bearing));
-            //tractor.setBearing(bearing);
-            udpateSeedTrack(p1, p2, bearing);
+            tractor.setBearing(bearing);
+            //udpateSeedTrack(p1, p2, bearing);
         }
     }
 

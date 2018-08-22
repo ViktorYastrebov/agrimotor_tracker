@@ -7,17 +7,26 @@ package com.test.kmlparser;
 
 import java.util.Timer;
 
+import android.content.Context;
 import android.graphics.Color;
 import android.os.Handler;
 import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.View;
+
+import android.widget.ZoomButtonsController;
+
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
 import com.test.kmlparser.GRPMC.GPRMCFileParser;
+
+import com.google.android.gms.maps.model.CameraPosition;
+import com.google.android.gms.maps.MapView;
+
 
 // http://www.tutorialspoint.com/java_xml/java_dom_parse_document.htm
 // https://www.programcreek.com/java-api-examples/?api=com.google.android.gms.maps.GoogleMap.OnMapClickListener
@@ -32,14 +41,12 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private Handler m_main_handler;
     private DataListener m_dataListener;
 
-    private final String files[] = {
-            "D5_1_GPS-2018-04-22.txt",
-            "M_1_GPS-2018-04-22.txt",
-            "M_2_GPS-2018-04-22.txt",
-            "M_3_GPS-2018-04-22.txt"
-            //"test1.txt",
-            //"test2.txt"
+    private MapView m_mapView;
+    private View m_view;
 
+    private final String files[] = {
+            "test1.txt",
+            "test2.txt"
     };
 
     @Override
@@ -50,6 +57,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
+        //mapFragment.getView();
         //parser = new KMLParser("Doslidnicke.kml", this);
         m_main_handler = new Handler();
     }
@@ -71,6 +79,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         // https://stackoverflow.com/questions/8204298/android-bluetooth-socket-tutorial-for-non-blocking-communication
         // https://android.okhelp.cz/timer-simple-timertask-java-android-example/
         // http://android.okhelp.cz/timer-task-timertask-run-cancel-android-example/
+
+        // https://stackoverflow.com/questions/6014987/redraw-refresh-itemizedoverlay-android-google-maps-api
 
 
         trackModel = new TrackModel(mMap, this, R.drawable.track_final_2, 8, 2);
@@ -126,5 +136,14 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                         Double.toString(latLng.longitude));
              }
         }); */
+
+        mMap.setOnCameraIdleListener(new GoogleMap.OnCameraIdleListener() {
+            @Override
+            public void onCameraIdle() {
+                CameraPosition cameraPosition = mMap.getCameraPosition();
+                Log.d("Zoom", "value :" + Double.toString(cameraPosition.zoom));
+            }
+        });
+
     }
 }
