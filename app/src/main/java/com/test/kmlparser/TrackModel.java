@@ -34,14 +34,12 @@ public class TrackModel {
 
     private Context m_owner = null;
     private GoogleMap m_map = null;
-
-    //private PolylineOptions m_polylineOptions = null;
-    //private Polyline m_polyline = null;
     private GroundOverlay tractor = null;
     private int iconId;
 
     private List<GPSTrack> m_track_list;
     private GPSPathScaler m_track_scaler;
+    private DrawableGPSTrack m_track;
 
     SeederAttr m_seederAttr;
 
@@ -51,51 +49,31 @@ public class TrackModel {
     {
         m_owner = ctx;
         m_map = m;
-        //m_polylineOptions = new PolylineOptions();
-        //m_polylineOptions.width(4.0f);
         this.iconId = iconId;
-        //m_view = view;
-
         m_seederAttr = new SeederAttr(sowerCount, sowerLength);
 
         m_track_list = new ArrayList<>();
         //temporary test
-        m_track_list.add( new DrawableGPSTrack(4.0, m_map, Color.BLUE));
-        m_track_list.add( new DrawableGPSTrack( 10.0, m_map, Color.GREEN));
+        m_track = new DrawableGPSTrack( 50.0, m_map, Color.GREEN);
+        m_track_list.add( m_track );
+        m_track_list.add( new DrawableGPSTrack(40.0, m_map, Color.BLUE));
+        m_track_list.add( new DrawableGPSTrack( 20.0, m_map, Color.RED));
+
+        //m_track_list.add( new DrawableGPSTrack( 50.0, m_map, Color.GREEN) );
         m_track_scaler = new GPSPathScaler(m_track_list);
     }
 
     public void initialize(LatLng start_p) {
-
-        //https://github.com/deepstreamIO/deepstream.io-client-java/issues/116
-        // must be called from the main thread !!! ???
-
         tractor = m_map.addGroundOverlay(new GroundOverlayOptions()
                 .image(getIconFromFile())
-                .position(start_p, 10)
+                .position(start_p, 10, 10)
                 .anchor(0.5f, 0.5f)
         );
-        //tractor.setBearing(0);
-
         m_track_scaler.initialize(start_p);
-        /*
-        if(tractor == null && m_polylineOptions.getPoints().isEmpty()) {
-            tractor = m_map.addGroundOverlay(new GroundOverlayOptions()
-                    .image(getIconFromFile())
-                    .position(start_p, 10)
-                    .anchor(0.5f, 0.5f)
-            );
+        m_track.addObserver( new SeededGridDrawer(m_track, m_map, m_seederAttr));
 
-            tractor.setBearing(0);
-            m_polylineOptions.add(start_p);
-            m_polyline = m_map.addPolyline(m_polylineOptions);
-
-            //init_bounds();
-
-            m_map.moveCamera(CameraUpdateFactory.newLatLng(start_p));
-            m_map.animateCamera(CameraUpdateFactory.zoomTo(17.0f));
-        }
-        */
+        m_map.moveCamera(CameraUpdateFactory.newLatLng(start_p));
+        m_map.animateCamera(CameraUpdateFactory.zoomTo(17.0f));
     }
 
     public void moveTo(LatLng p) {
@@ -104,19 +82,9 @@ public class TrackModel {
         // To alter the shape of the polyline after
         // it has been added, you can call Polyline.setPoints()
         // and provide a new list of points for the polyline.
-
-        /*
-        List<LatLng> points = m_polyline.getPoints();
-        points.add(p);
-        m_polyline.setPoints(points);
-        tractor.setPosition(p);
-        updateBearing();
-        */
-
         double bearing = m_track_scaler.process(p);
         tractor.setPosition(p);
         tractor.setBearing((float)bearing);
-
     }
 
     public Context getContext() {
@@ -155,6 +123,7 @@ public class TrackModel {
         return icon;
     }
 
+    /*
     private void udpateSeedTrack(LatLng srcPoint, LatLng destPoint, float angle) {
 
         //TODO: optimize it to single for LOOP !!!. IT should not metter: even or odd !!!
@@ -226,12 +195,12 @@ public class TrackModel {
             }
         }
 
-        /*
-        for(PolygonOptions p : polygons) {
-            m_map.addPolygon(p);
-        } */
+
+        //for(PolygonOptions p : polygons) {
+        //    m_map.addPolygon(p);
+        //}
         //tractor.setBearing(angle);
-    }
+    } */
 
     /*
     private void updateBearing() {

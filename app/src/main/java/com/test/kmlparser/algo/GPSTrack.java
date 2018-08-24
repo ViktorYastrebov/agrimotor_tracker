@@ -29,4 +29,7 @@ public class GPSTrack {
     public Double getScale() {
         return m_scale;
     }
+    public int size() {
+        return m_points.size();
+    }
 }
