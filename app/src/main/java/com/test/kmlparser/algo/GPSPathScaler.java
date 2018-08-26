@@ -17,9 +17,11 @@ public class GPSPathScaler {
     protected Map<Double, GPSTrack> m_scales;
     protected ArrayList<Double> m_keys;
     private int m_last_key;
+    //private List<LatLng> m_triangle_helper; //Memory usage optimization. less swaps !!!
 
-    private ScaleStrategy m_scaleStr;
+    //private ScaleStrategy m_scaleStr;
 
+    /*
     private interface ScaleStrategy {
 
         //TODO: make general interface for condition of adding
@@ -82,15 +84,18 @@ public class GPSPathScaler {
                 to.add(p);
             }
         }
-    }
+    }*/
 
     public GPSPathScaler( List<GPSTrack> tracks) {
         m_scales = new TreeMap<>();
         for(GPSTrack track : tracks) {
-            m_scales.put(track.getScale(), track);
+            m_scales.put(track.getTriScale(), track);
         }
         m_all_points = new ArrayList<>();
-        m_scaleStr = new DistanceStrategy();
+        //m_scaleStr = new DistanceStrategy();
+
+        //m_triangle_helper = new ArrayList<>();
+
     }
 
     public void initialize(LatLng p) {
@@ -142,6 +147,75 @@ public class GPSPathScaler {
         GPSTrack to  = m_scales.get(prev);
         m_scaleStr.addHelper(m_all_points, to, p); */
 
+
+        for(int i = m_last_key; i > 0; --i) {
+            Double prev = m_keys.get(i - 1);
+            Double cur = m_keys.get(i);
+            GPSTrack from = m_scales.get(prev);
+            GPSTrack to = m_scales.get(cur);
+
+            int from_size = from.size();
+            if(from_size > 1) {
+                List<LatLng> triangle = new ArrayList<>();
+                triangle.add(from.getPoints().get(from_size - 2));
+                triangle.add(from.getPoints().get(from_size - 1));
+                triangle.add(p);
+                //List<LatLng> trinangle = from.getPoints().subList(from_size -2, from_size);
+                //trinangle.add(p);
+                double triangleSquare = SphericalUtil.computeArea(triangle);
+                //LatLng p1 = from.getPoints().get( from_size - 2);
+                //LatLng p2 = from.getPoints().get( from_size - 1);
+                //double triangleSquare = calcTriangleSquare(p1, p2, p); // it's not in the Meters
+
+                Log.d("before add", "triangle :" + Double.toString(triangleSquare) +
+                        ",  scale :" + Double.toString(to.getTriScale()));
+                if(triangleSquare > to.getTriScale()) {
+                    to.add(p);
+                } else {
+                    LatLng prevTo = to.getPoints().get(to.size() - 1);
+                    double dist = SphericalUtil.computeDistanceBetween(prevTo, p);
+                    Log.d("before add 1", "dist :" + Double.toString(dist) +
+                            ",  scale :" + Double.toString(to.getDistScale()));
+                    if(dist >= to.getDistScale()) {
+                        to.add(p);
+                    }
+                }
+            }
+        }
+
+        Double prev = m_keys.get(0);
+        GPSTrack to  = m_scales.get(prev);
+        int size = m_all_points.size();
+        if(size > 1) {
+            //List<LatLng> triangle = m_all_points.subList(size - 2, size);
+            //triangle.add(p);
+
+            List<LatLng> triangle = new ArrayList<>();
+            triangle.add(m_all_points.get(size - 2));
+            triangle.add(m_all_points.get(size - 1));
+            triangle.add(p);
+
+            double triSquare = SphericalUtil.computeArea(triangle);
+            //LatLng p1 = m_all_points.get( size - 2);
+            //LatLng p2 = m_all_points.get( size - 1);
+            //double triSquare = calcTriangleSquare(p1, p2, p);
+            Log.d("before add 2", "triangle :" + Double.toString(triSquare) +
+                    ",  scale :" + Double.toString(to.getTriScale()));
+            if(triSquare > to.getTriScale()) {
+                to.add(p);
+            } else {
+                LatLng prevTo = to.getPoints().get(to.size() - 1);
+                double dist = SphericalUtil.computeDistanceBetween(prevTo, p);
+                Log.d("before add 3", "dist :" + Double.toString(dist) +
+                        ",  scale :" + Double.toString(to.getDistScale()));
+                if(dist >= to.getDistScale()) {
+                    to.add(p);
+                }
+            }
+        }
+
+
+        /*
         for(Map.Entry<Double, GPSTrack> e : m_scales.entrySet()) {
             GPSTrack track = e.getValue();
             LatLng prev = track.getPoints().get(track.size() - 1);
@@ -150,6 +224,7 @@ public class GPSPathScaler {
                 track.add(p);
             }
         }
+        */
         LatLng prev_gen_track = m_all_points.get(m_all_points.size() - 1);
         double bearing = SphericalUtil.computeHeading(prev_gen_track, p);
         m_all_points.add(p);
@@ -165,4 +240,12 @@ public class GPSPathScaler {
                 ( (p1.longitude - p3.longitude) * (p2.latitude - p3.latitude)) )	);
         return rt;
     }
+
+    /*
+    private double calcTriangleSquare(List<LatLng> lst) {
+        if(lst.size() < 3) {
+            return 0.0d;
+        }
+        LatLng p1 = lst.
+    } */
 }

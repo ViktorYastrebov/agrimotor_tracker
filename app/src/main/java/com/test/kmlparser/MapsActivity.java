@@ -84,7 +84,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
 
         trackModel = new TrackModel(mMap, this, R.drawable.track_final_2, 8, 2);
-        GPRMCFileParser file_emul = new GPRMCFileParser("tracks/" + files[1], this);
+        GPRMCFileParser file_emul = new GPRMCFileParser("tracks/" + files[0], this);
 
         m_dataListener = new DataListener(m_main_handler, file_emul, trackModel);
         Thread dataThreadListener = new Thread(m_dataListener);

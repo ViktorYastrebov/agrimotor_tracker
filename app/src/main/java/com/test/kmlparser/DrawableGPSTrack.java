@@ -19,8 +19,8 @@ public class DrawableGPSTrack extends GPSTrack implements  Observable {
 
     private List<Observer> m_observers;
 
-    public DrawableGPSTrack(double scale, GoogleMap map, int color) {
-        super(scale);
+    public DrawableGPSTrack(double triScale, double distScale, GoogleMap map, int color) {
+        super(triScale, distScale);
         m_map = map;
         m_color = color;
         m_observers = new ArrayList<Observer>();

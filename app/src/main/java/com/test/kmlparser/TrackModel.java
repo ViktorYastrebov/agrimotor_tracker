@@ -54,10 +54,10 @@ public class TrackModel {
 
         m_track_list = new ArrayList<>();
         //temporary test
-        m_track = new DrawableGPSTrack( 50.0, m_map, Color.GREEN);
+        m_track = new DrawableGPSTrack( 0.01, 50.0, m_map, Color.GREEN);
         m_track_list.add( m_track );
-        m_track_list.add( new DrawableGPSTrack(40.0, m_map, Color.BLUE));
-        m_track_list.add( new DrawableGPSTrack( 20.0, m_map, Color.RED));
+        //m_track_list.add( new DrawableGPSTrack(4,40.0, m_map, Color.BLUE));
+        //m_track_list.add( new DrawableGPSTrack(2, 20.0, m_map, Color.RED));
 
         //m_track_list.add( new DrawableGPSTrack( 50.0, m_map, Color.GREEN) );
         m_track_scaler = new GPSPathScaler(m_track_list);
@@ -73,7 +73,7 @@ public class TrackModel {
         m_track.addObserver( new SeededGridDrawer(m_track, m_map, m_seederAttr));
 
         m_map.moveCamera(CameraUpdateFactory.newLatLng(start_p));
-        m_map.animateCamera(CameraUpdateFactory.zoomTo(17.0f));
+        m_map.animateCamera(CameraUpdateFactory.zoomTo(19.0f));
     }
 
     public void moveTo(LatLng p) {
