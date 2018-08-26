@@ -4,6 +4,8 @@ import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.maps.android.SphericalUtil;
 import com.test.kmlparser.algo.GPSTrack;
+import com.test.kmlparser.algo.Observable;
+import com.test.kmlparser.algo.Observer;
 
 public class SeededGridDrawer implements Observer {
     private GoogleMap m_map;

@@ -12,23 +12,19 @@ import android.graphics.Color;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.model.BitmapDescriptor;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
-import com.google.android.gms.maps.model.CircleOptions;
 import com.google.android.gms.maps.model.GroundOverlay;
 import com.google.android.gms.maps.model.GroundOverlayOptions;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.CameraUpdateFactory;
 
 import com.google.android.gms.maps.model.LatLngBounds;
-import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.Polygon;
-import com.google.android.gms.maps.model.Polyline;
-import com.google.android.gms.maps.model.PolylineOptions;
 
 import com.google.android.gms.maps.model.PolygonOptions;
 
-import com.google.maps.android.SphericalUtil;
 import com.test.kmlparser.algo.GPSPathScaler;
-import com.test.kmlparser.algo.GPSTrack;
+import com.test.kmlparser.algo.GPSScaledTrack;
+import com.test.kmlparser.algo.GPSTrackObservable;
 
 public class TrackModel {
 
@@ -37,7 +33,7 @@ public class TrackModel {
     private GroundOverlay tractor = null;
     private int iconId;
 
-    private List<GPSTrack> m_track_list;
+    private List<GPSScaledTrack> m_track_list;
     private GPSPathScaler m_track_scaler;
     private DrawableGPSTrack m_track;
 
@@ -69,8 +65,12 @@ public class TrackModel {
                 .position(start_p, 10, 10)
                 .anchor(0.5f, 0.5f)
         );
+
         m_track_scaler.initialize(start_p);
         m_track.addObserver( new SeededGridDrawer(m_track, m_map, m_seederAttr));
+
+        GPSTrackObservable baseTrack = m_track_scaler.getBaseTrack();
+        baseTrack.addObserver(new GPSTrackRenderer(m_map, Color.GRAY, baseTrack));
 
         m_map.moveCamera(CameraUpdateFactory.newLatLng(start_p));
         m_map.animateCamera(CameraUpdateFactory.zoomTo(19.0f));
@@ -122,98 +122,6 @@ public class TrackModel {
         BitmapDescriptor icon = BitmapDescriptorFactory.fromBitmap(bitmap);
         return icon;
     }
-
-    /*
-    private void udpateSeedTrack(LatLng srcPoint, LatLng destPoint, float angle) {
-
-        //TODO: optimize it to single for LOOP !!!. IT should not metter: even or odd !!!
-
-        //List<PolygonOptions> polygons = new ArrayList<>();
-
-        double sowerLength = m_seederAttr.getSowerLength();
-        if(m_seederAttr.getSowerCount() % 2 == 1) {
-            double startPoint = m_seederAttr.getSowerLength() / 2;
-            int sowerCount = m_seederAttr.getSowerCount() / 2;
-
-            LatLng src_l_p1 = SphericalUtil.computeOffset(srcPoint, startPoint, 90 + angle);
-            LatLng dest_l_p1 = SphericalUtil.computeOffset(destPoint, startPoint, 90 + angle);
-
-            LatLng src_r_p1 = SphericalUtil.computeOffset(srcPoint, startPoint, -90 + angle);
-            LatLng dest_r_p1 = SphericalUtil.computeOffset(destPoint, startPoint, -90 + angle);
-
-            SownCell middle = new SownCell(src_r_p1, dest_r_p1, dest_l_p1, src_l_p1);
-            //polygons.add(middle.getPolygon());
-            m_map.addPolygon(middle.getPolygon());
-
-            for(int i = 0; i < sowerCount; ++i) {
-                LatLng l_p2 = SphericalUtil.computeOffset(srcPoint, startPoint + (sowerLength * (i + 1)), 90 + angle );
-                LatLng l_p1 = SphericalUtil.computeOffset(destPoint, startPoint + (sowerLength * (i + 1)), 90 + angle );
-
-                SownCell sc_left = new SownCell(src_l_p1, dest_l_p1, l_p1, l_p2);
-                m_map.addPolygon(sc_left.getPolygon());
-                //polygons.add(sc_left.getPolygon());
-
-                LatLng r_p2 = SphericalUtil.computeOffset(srcPoint, startPoint + (sowerLength * (i+1)), -90 + angle );
-                LatLng r_p1 = SphericalUtil.computeOffset(destPoint, startPoint + (sowerLength * (i+1)), -90 + angle );
-
-                SownCell sc_right = new SownCell(src_r_p1, dest_r_p1, r_p1, r_p2);
-                m_map.addPolygon(sc_right.getPolygon());
-                //polygons.add(sc_right.getPolygon());
-
-                src_l_p1 = l_p2;
-                dest_l_p1 = l_p1;
-                src_r_p1 = r_p2;
-                dest_r_p1 = r_p1;
-            }
-        } else {
-            LatLng src_l_p1 = srcPoint;
-            LatLng dest_l_p1 = destPoint;
-
-            LatLng src_r_p1 = srcPoint;
-            LatLng dest_r_p1 = destPoint;
-
-            int sowerCount = m_seederAttr.getSowerCount() / 2;
-            for(int i = 0; i < sowerCount; ++i) {
-                LatLng l_p2 = SphericalUtil.computeOffset(srcPoint, (sowerLength * (i + 1)), 90 + angle );
-                LatLng l_p1 = SphericalUtil.computeOffset(destPoint, (sowerLength * (i + 1)), 90 + angle );
-
-                SownCell sc_left = new SownCell(src_l_p1, dest_l_p1, l_p1, l_p2);
-                m_map.addPolygon(sc_left.getPolygon());
-                //polygons.add(sc_left.getPolygon());
-
-                LatLng r_p2 = SphericalUtil.computeOffset(srcPoint, (sowerLength * (i+1)), -90 + angle );
-                LatLng r_p1 = SphericalUtil.computeOffset(destPoint, (sowerLength * (i+1)), -90 + angle );
-
-                SownCell sc_right = new SownCell(src_r_p1, dest_r_p1, r_p1, r_p2);
-                m_map.addPolygon(sc_right.getPolygon());
-                //polygons.add(sc_right.getPolygon());
-
-                src_l_p1 = l_p2;
-                dest_l_p1 = l_p1;
-                src_r_p1 = r_p2;
-                dest_r_p1 = r_p1;
-            }
-        }
-
-
-        //for(PolygonOptions p : polygons) {
-        //    m_map.addPolygon(p);
-        //}
-        //tractor.setBearing(angle);
-    } */
-
-    /*
-    private void updateBearing() {
-        List<LatLng> points = m_polyline.getPoints();
-        int list_size = points.size();
-        if(list_size > 1) {
-            LatLng p1 = points.get(list_size - 2);
-            LatLng p2 = points.get(list_size - 1);
-            float bearing = (float)SphericalUtil.computeHeading(p1, p2);
-            tractor.setBearing(bearing);
-            //udpateSeedTrack(p1, p2, bearing);
-        }
-    } */
 
     public void TargetCamera(LatLng p) {
         m_map.moveCamera(CameraUpdateFactory.newLatLng(p));

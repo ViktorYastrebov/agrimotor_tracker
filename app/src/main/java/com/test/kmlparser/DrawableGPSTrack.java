@@ -7,11 +7,13 @@ import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Polyline;
 import com.google.android.gms.maps.model.PolylineOptions;
-import com.test.kmlparser.algo.GPSTrack;
+import com.test.kmlparser.algo.GPSScaledTrack;
+import com.test.kmlparser.algo.Observable;
+import com.test.kmlparser.algo.Observer;
 
 import android.util.Log;
 
-public class DrawableGPSTrack extends GPSTrack implements  Observable {
+public class DrawableGPSTrack extends GPSScaledTrack implements Observable {
 
     private GoogleMap m_map;
     private int m_color;
